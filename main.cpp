@@ -57,6 +57,7 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
+        createGraphicsPipeline();
     }
 
     //Create Vulkan Instance
@@ -425,6 +426,10 @@ private:
         }
     }
 
+    void createGraphicsPipeline() {
+
+    }
+
     void mainLoop() {
         while (!glfwWindowShouldClose(window))
         {
@@ -435,6 +440,9 @@ private:
  
     void cleanup() 
     {
+        for (auto imageView : swapChainImageViews) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
         vkDestroySwapchainKHR(device, swapChain, nullptr);
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
