@@ -42,8 +42,8 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/Cube.obj";
-const std::string TEXTURE_PATH = "textures/Rick.jpg";
+const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
