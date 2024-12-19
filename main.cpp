@@ -42,8 +42,8 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/viking_room.obj";
-const std::string TEXTURE_PATH = "textures/viking_room.png";
+const std::string MODEL_PATH = "models/Cube.obj";
+const std::string TEXTURE_PATH = "textures/Rick.jpg";
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -373,8 +373,8 @@ private:
                 indices.graphicsFamily = i;
             }
             if (indices.isComplete()) {
-				break;
-			}
+                break;
+            }
             i++;
         }
 
@@ -973,8 +973,8 @@ private:
         stbi_image_free(pixels);
 
         createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
         copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
@@ -984,12 +984,12 @@ private:
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
 
-    
+
     }
 
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
-                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                    VkImage & image, VkDeviceMemory & imageMemory) {
+        VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+        VkImage& image, VkDeviceMemory& imageMemory) {
 
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1299,6 +1299,8 @@ private:
         }
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+        std::cout << "Number of vertices in the model: " << attrib.vertices.size() / 3 << std::endl;
+
 
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
@@ -1590,9 +1592,38 @@ private:
 
 
     void mainLoop() {
+        //Delta time
+        auto lastFrameTime = std::chrono::high_resolution_clock::now();
         while (!glfwWindowShouldClose(window))
         {
+            //Delta time
+            auto currentFrameTime = std::chrono::high_resolution_clock::now();
+            float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
+            lastFrameTime = currentFrameTime;
+
             glfwPollEvents();
+
+            // Calculate forward and right vectors
+            glm::vec3 forward = glm::normalize(cameraTarget - cameraPos);
+            glm::vec3 right = glm::normalize(glm::cross(forward, cameraUp));
+
+            //Calculate speed
+            float deltaSpeed = cameraSpeed * deltaTime;
+
+            // Handle camera movement
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                cameraPos += deltaSpeed * forward; // Move forward
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                cameraPos -= deltaSpeed * forward; // Move backward
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                cameraPos -= deltaSpeed * right; // Move left
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                cameraPos += deltaSpeed * right; // Move right
+            }
+
             drawFrame();
         }
         vkDeviceWaitIdle(device);
@@ -1668,14 +1699,14 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
- 
-    void cleanup() 
+
+    void cleanup()
     {
         cleanupSwapChain();
 
@@ -1696,7 +1727,7 @@ private:
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device, inFlightFences[i], nullptr);
         }
-        
+
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
             vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
@@ -1820,6 +1851,12 @@ private:
 
     bool framebufferResized = false;
     uint32_t currentFrame = 0;
+
+    //Camera
+    glm::vec3 cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 0.0f, 1.0f);
+    const float cameraSpeed = 5.05f;
 
 
 
